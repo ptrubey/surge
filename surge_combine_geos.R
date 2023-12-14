@@ -2,11 +2,14 @@ rm(list = ls())
 # libs = c('sf','modeest')
 libs = c('sf')
 sapply(libs, require, character.only = TRUE)
+load('./data/slosh_1run.rda')
+rm(out)
 
-tiger_path = paste0(
-  Sys.getenv('USERPROFILE'), 
-  '/Nextcloud/Research/CommonData/Tiger'
-  )
+# tiger_path = paste0(
+#   Sys.getenv('USERPROFILE'), 
+#   '/Nextcloud/Research/CommonData/Tiger'
+#   )
+tiger_path = '~/Nextcloud/Research/CommonData/Tiger'
 
 loadsf = function(args){
   path = paste0(tiger_path, args[1])
@@ -71,10 +74,12 @@ landmarks = list(
 landmarks_sfs = lapply(landmarks, loadsf)
 landmarks_sf = do.call(rbind, landmarks_sfs)
 # Removing mountain tops, cul-de-sacs, etc.
+
+
+
 landmarks_sf_subset = landmarks_sf[
   !(landmarks_sf$MTFCC %in% c('C3022','C3061','C3062','C3066','C3071','')),
   ]
-
 st_write(
   landmarks_sf_subset,
   dsn = paste0(tiger_path, '/POINTLM/tl_2023_NJ_MD_PA_pointlm'),
@@ -82,3 +87,27 @@ st_write(
   driver = 'ESRI Shapefile',
   append = FALSE
   )
+
+source('surge_fns.R')
+landmarks = st_read(
+  dsn = paste0(tiger_path, '/POINTLM/Combined'), 
+  layer = 'pointlm_2023_USA'
+  )
+removed_codes = c('C3022','C3026','C3061','C3062','C3066','C3067')
+landmarks_subset = landmarks[!(landmarks$MTFCC %in% removed_codes),]
+landmarks_subset2 = subset_geo_to_data_boundary(
+  points = as.data.frame(coords), 
+  shapes = landmarks_subset
+  )
+
+st_write(
+  landmarks_subset2, 
+  dsn = './data/landmarks', 
+  layer = 'landmarks',
+  driver = 'ESRI Shapefile',
+  append = FALSE
+  )
+
+
+
+

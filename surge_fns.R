@@ -1,4 +1,4 @@
-rm(list = ls())
+# rm(list = ls())
 libs = c('sf', 'raster')
 sapply(libs, require, character.only = TRUE)
 
