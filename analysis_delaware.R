@@ -179,61 +179,61 @@ make_marginal_plots = function(n){
   pv = location_plot_v(n)
   pw = location_plot_w(n)
   pp = grid.arrange(pv,pw, ncol = 2, top = paste(i, locdata$FULLNAME[i]))
-  ggsave(sprintf('~/scratch/delaware_%02d.png', i), pp, width = 8, height = 3.5, units = 'in')
+  ggsave(sprintf('~/scratch/res/delaware_%02d.png', i), pp, width = 8, height = 3.5, units = 'in')
 }
-# for(i in 1:ncol(W)){
-#   make_marginal_plots(i)
-# }
+for(i in 1:ncol(W)){
+  make_marginal_plots(i)
+}
 
 rm(list = ls())
+# 
+# mc_delta = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/mc_delta.csv.gz'))
+# vb_delta = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/vb_delta.csv.gz'))
+# r0_delta = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/reg_0_delta.csv.gz'))
+# r1_delta = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/reg_1_delta.csv.gz'))
+# 
+# bincount = function(x){table(factor(x, levels = 0:199))}
+# activeclust = function(arr){
+#   ccount = t(apply(arr, 1, bincount))
+#   return(ccount[,which(!apply(ccount, 2, function(x){all(x == 0)}))])
+# }
+# mc_ccount = activeclust(mc_delta)
+# vb_ccount = activeclust(vb_delta)
+# r0_ccount = activeclust(r0_delta)
+# r1_ccount = activeclust(r1_delta)
+# 
+# cluster_concentration = function(arr, probs = c(0.9, 0.99, 0.999)){
+#   # assume arr is output of activeclust
+#   sums = apply(arr, 2, sum)
+#   sums = sums[order(sums, decreasing = TRUE)]
+#   names(sums) = 1:length(sums)
+#   cprob = cumsum(sums) / sum(sums)
+#   return(sapply(probs, function(p){sum(cprob < p) + 1}))
+# }
+# 
+# mc_conc = cluster_concentration(mc_ccount)
+# vb_conc = cluster_concentration(vb_ccount)
+# r0_conc = cluster_concentration(r0_ccount)
+# r1_conc = cluster_concentration(r1_ccount)
+# 
+# concentrations = data.frame(rbind(mc_conc, vb_conc, r0_conc, r1_conc))
+# names(concentrations) = c('c0.9','c0.99','c0.999')
+# concentrations$Model = c('Monte Carlo', 'Var Bayes', 'Reg w/o FE', 'Reg w/ FE')
+# concentrations = concentrations[c('Model','c0.9','c0.99','c0.999')]
+# names(concentrations)[2:4] = c('0.9','0.99','0.999')
 
-mc_delta = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/mc_delta.csv.gz'))
-vb_delta = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/vb_delta.csv.gz'))
-r0_delta = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/reg_0_delta.csv.gz'))
-r1_delta = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/reg_1_delta.csv.gz'))
-
-bincount = function(x){table(factor(x, levels = 0:199))}
-activeclust = function(arr){
-  ccount = t(apply(arr, 1, bincount))
-  return(ccount[,which(!apply(ccount, 2, function(x){all(x == 0)}))])
-}
-mc_ccount = activeclust(mc_delta)
-vb_ccount = activeclust(vb_delta)
-r0_ccount = activeclust(r0_delta)
-r1_ccount = activeclust(r1_delta)
-
-cluster_concentration = function(arr, probs = c(0.9, 0.99, 0.999)){
-  # assume arr is output of activeclust
-  sums = apply(arr, 2, sum)
-  sums = sums[order(sums, decreasing = TRUE)]
-  names(sums) = 1:length(sums)
-  cprob = cumsum(sums) / sum(sums)
-  return(sapply(probs, function(p){sum(cprob < p) + 1}))
-}
-
-mc_conc = cluster_concentration(mc_ccount)
-vb_conc = cluster_concentration(vb_ccount)
-r0_conc = cluster_concentration(r0_ccount)
-r1_conc = cluster_concentration(r1_ccount)
-
-concentrations = data.frame(rbind(mc_conc, vb_conc, r0_conc, r1_conc))
-names(concentrations) = c('c0.9','c0.99','c0.999')
-concentrations$Model = c('Monte Carlo', 'Var Bayes', 'Reg w/o FE', 'Reg w/ FE')
-concentrations = concentrations[c('Model','c0.9','c0.99','c0.999')]
-names(concentrations)[2:4] = c('0.9','0.99','0.999')
-
-print(
-  xtable(
-    concentrations, 
-    digits = 0,
-    caption = 'Cluster concentration for identified models and fitting 
-        methods, on the \\emph{Restricted} Slice: columns specify quantiles 
-        detailing the proportion of data contained within the table cells 
-        indicated number of clusters.\\label{tab:cluster_concentration}'
-    ), 
-  include.rownames = FALSE,
-  file = '~/git/exapg/tables/cluster_concentration.tex'
-  )
+# print(
+#   xtable(
+#     concentrations, 
+#     digits = 0,
+#     caption = 'Cluster concentration for identified models and fitting 
+#         methods, on the \\emph{Restricted} Slice: columns specify quantiles 
+#         detailing the proportion of data contained within the table cells 
+#         indicated number of clusters.\\label{tab:cluster_concentration}'
+#     ), 
+#   include.rownames = FALSE,
+#   file = '~/git/exapg/tables/cluster_concentration.tex'
+#   )
 
 
 

@@ -41,18 +41,18 @@ raw = t(slosh[,-c(1:8)])
 # vb_alphas = read.csv(gzfile('~/git/projgamma/datasets/slosh/crt/vb_alphas.csv.gz'))
 # r1_alphas = read.csv(gzfile('~/git/projgamma/datasets/slosh/crt/reg_1_alphas.csv.gz'))
 # r0_alphas = read.csv(gzfile('~/git/projgamma/datasets/slosh/crt/reg_0_alphas.csv.gz'))
-save(
-  mc_alphas, vb_alphas, r1_alphas, r0_alphas, compress = 'xz',
-  file = '~/Nextcloud/Research/Projects/Extremes/surge/data/crt.rda'
-  )
+# save(
+#   mc_alphas, vb_alphas, r1_alphas, r0_alphas, compress = 'xz',
+#   file = '~/Nextcloud/Research/Projects/Extremes/surge/data/crt.rda'
+#   )
 load(file = '~/Nextcloud/Research/Projects/Extremes/surge/data/crt.rda')
-V = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/V.csv.gz'))
-R = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/R.csv.gz'))[,1]
-Z = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/Z.csv.gz'))
-P = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/P.csv.gz'))
-I = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/I.csv.gz'))[,1]
+V = read.csv(gzfile('~/git/projgamma/datasets/slosh/crt/V.csv.gz'))
+R = read.csv(gzfile('~/git/projgamma/datasets/slosh/crt/R.csv.gz'))[,1]
+Z = read.csv(gzfile('~/git/projgamma/datasets/slosh/crt/Z.csv.gz'))
+P = read.csv(gzfile('~/git/projgamma/datasets/slosh/crt/P.csv.gz'))
+I = read.csv(gzfile('~/git/projgamma/datasets/slosh/crt/I.csv.gz'))[,1]
 Zi = Z[I + 1,]
-W = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/W.csv.gz'))
+W = read.csv(gzfile('~/git/projgamma/datasets/slosh/crt/W.csv.gz'))
 parms = data.frame(t(P))
 names(parms) = c('b','sigma','chi')
 
@@ -179,11 +179,11 @@ make_marginal_plots = function(n){
   pv = location_plot_v(n)
   pw = location_plot_w(n)
   pp = grid.arrange(pv,pw, ncol = 2, top = paste(i, locdata$FULLNAME[i]))
-  ggsave(sprintf('~/scratch/delaware_%02d.png', i), pp, width = 8, height = 3.5, units = 'in')
+  ggsave(sprintf('~/scratch/crt/delaware_%02d.png', i), pp, width = 8, height = 3.5, units = 'in')
 }
-# for(i in 1:ncol(W)){
-#   make_marginal_plots(i)
-# }
+for(i in 1:ncol(W)){
+  make_marginal_plots(i)
+}
 
 rm(list = ls())
 
