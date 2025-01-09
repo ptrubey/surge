@@ -2,7 +2,7 @@
 #----------------------------------
 rm(list = ls())
 libs = c('dplyr','ggplot2', 'maps', 'sf', 'gridExtra', 'xtable',
-         'ggExtra', 'patchwork', 'Cairo', 'ggmap','scales')
+         'ggExtra', 'patchwork', 'Cairo', 'ggmap','scales','ggpubr')
 sapply(libs, require, character.only = TRUE)
 rm(libs)
 register_stadiamaps('bb37e42d-d438-416f-8003-d09c1e6a1347')
@@ -11,29 +11,60 @@ register_stadiamaps('bb37e42d-d438-416f-8003-d09c1e6a1347')
 #----------------------------------
 states = map_data('state')
 slosh = read.csv(gzfile('~/git/projgamma/datasets/slosh/slosh_del_data.csv.gz'))
+slos2 = read.csv(gzfile('~/git/projgamma/datasets/slosh/slosh_dbg_data.csv.gz'))
+slos3 = read.csv(gzfile('~/git/projgamma/datasets/slosh/slosh_crt_data.csv.gz'))
 locdata = slosh[,1:8]
+locdata2 = slosh[,1:8]
+locdata1 = slos2[,1:8]
+locdata3 = slos3[,1:8]
 raw = t(slosh[,-c(1:8)])
 # Relevant Locs: 
 # - (23) Dover AFB
 # - (53) Philadelphia Intl. Airport
-#----------------------------------
+# ----------------------------------
 #  Delaware Map
-#----------------------------------
-# delaware <- c(left = min(locdata$long) - 0.2, bottom = min(locdata$lat) - 0.1, 
-#               right = max(locdata$long) + 0.2, top = max(locdata$lat) + 0.1)
-# delaware_basemap <- get_stadiamap(
-#         delaware, zoom = 10, maptype = 'stamen_toner_lite'
-#         )
-# delaware_map = ggmap(delaware_basemap) + #, darken = 0.5) + 
-#   geom_point(aes(x = long, y = lat, color = Category), data = locdata) +
-#   geom_label(aes(x = long, y = lat, label = FULLNAME, vjust = 'top', hjust = 'left'), 
-#              data = locdata[c(23,56),], position = position_dodge2(width = 0.5), 
-#              alpha = 0.8) + xlab(element_blank()) + ylab(element_blank()) + 
-#   theme(legend.title = element_blank(), legend.position = c(0.15, 0.91),
-#         legend.key = element_blank(), 
-#         legend.background = element_rect(fill = alpha('white',0.8)))
-# print(delaware_map)
-# ggsave('~/git/exapg/plots/delaware.pdf', delaware_map)
+# ----------------------------------
+delaware <- c(left = min(locdata$long) - 0.2, bottom = min(locdata$lat) - 0.1,
+              right = max(locdata$long) + 0.2, top = max(locdata$lat) + 0.1)
+delaware_basemap <- get_stadiamap(
+        delaware, zoom = 10, maptype = 'stamen_toner_lite'
+        )
+locdata3$ABBRNAME = locdata3$FULLNAME
+locdata3$ABBRNAME[5]
+locdata3$ABBRNAME[10] = 'PIA'
+locdata3$ABBRNAME[11] = 'Packer Ave'
+locdata1$FCategory = factor(locdata1$Category)
+locdata2$FCategory = factor(locdata2$Category, levels = levels(locdata1$FCategory))
+locdata3$FCategory = factor(locdata3$Category, levels = levels(locdata1$FCategory))
+
+colors = c('#66c2a5','#fc8d62','#8da0cb','#e78ac3','#a6d854')
+levels = levels(locdata1$FCategory)
+
+delaware_map_1 = ggmap(delaware_basemap) +
+  geom_point(aes(x = long, y = lat, color = FCategory), data = locdata1) +
+  theme(legend.title = element_blank(), legend.key = element_blank(),
+        axis.title = element_blank(), axis.text = element_blank()) +
+  scale_color_manual(values = colors, labels = levels, drop = FALSE)
+delaware_map_2 = ggmap(delaware_basemap) +
+  geom_point(aes(x = long, y = lat, color = FCategory), data = locdata2, show.legend = FALSE) +
+  theme(legend.title = element_blank(), legend.key = element_blank(),
+        axis.title = element_blank(), axis.text = element_blank()) +
+  scale_color_manual(values = colors, labels = levels, drop = FALSE)
+delaware_map_3 = ggmap(delaware_basemap) +
+  geom_point(aes(x = long, y = lat, color = FCategory), data = locdata3, show.legend = FALSE) +
+  geom_label(aes(x = long, y = lat, label = ABBRNAME, vjust = 'top', hjust = 'left'),
+             data = locdata3[c(5,10,11),], position = position_dodge2(width = 0.5),
+             alpha = 0.8) + xlab(element_blank()) + ylab(element_blank()) +
+  theme(legend.title = element_blank(), legend.key = element_blank(),
+        axis.title = element_blank(), axis.text = element_blank()) +
+  scale_color_manual(values = colors, labels = levels, drop = FALSE)
+delaware_map = ggarrange(
+  delaware_map_1, delaware_map_2, delaware_map_3, 
+  nrow = 1, ncol = 3, common.legend = TRUE, legend = 'right'
+  )
+print(delaware_map)
+ggsave('~/git/exapg/plots/delaware.pdf', delaware_map,
+  height = 5, width = 11, units = 'in')
 #---------------------------------
 #  Posterior Predictive Data
 #---------------------------------
@@ -104,15 +135,13 @@ location_plot_v = function(location){
   r1 = data.frame(V = r1_postv[,location], Fit = 'Reg w/ FE')
   r0 = data.frame(V = r0_postv[,location], Fit = 'Reg w/o FE')
   ra = data.frame(V = V[,location], Fit = 'Empirical')
-  df = do.call(rbind, list(mc, vb, r1, r0, ra))
-  var_order = c('Empirical', 'Monte Carlo', 'Var Bayes', 
-                'Reg w/ FE', 'Reg w/o FE')
+  df = do.call(rbind, list(ra, mc, vb, r1, r0))
+  var_order = c('Empirical','Monte Carlo','Var Bayes','Reg w/ FE','Reg w/o FE')
   df$Model = factor(as.character(df$Fit), levels = var_order)
   plt = ggplot(df, aes(x = V, color = Model)) + 
     stat_ecdf() +
     xlab(element_blank()) + ylab(element_blank()) + 
-    xlim(c(0,1)) + theme_minimal() +
-    theme(legend.position = c(0.8, 0.25))
+    xlim(c(0,1)) + theme_minimal() + theme(legend.title =  element_blank())
   return(plt)
 }
 location_plot_z = function(location){
@@ -121,15 +150,13 @@ location_plot_z = function(location){
   r1 = data.frame(Z = r1_postz[,location], Fit = 'Reg w/ FE')
   r0 = data.frame(Z = r0_postz[,location], Fit = 'Reg w/o FE')
   ra = data.frame(Z = Zi[,location], Fit = 'Empirical')
-  df = do.call(rbind, list(mc, vb, r1, r0, ra))
-  var_order = c('Empirical', 'Monte Carlo', 'Var Bayes', 
-                'Reg w/ FE', 'Reg w/o FE')
+  df = do.call(rbind, list(ra, mc, vb, r1, r0))
+  var_order = c('Empirical','Monte Carlo','Var Bayes','Reg w/ FE','Reg w/o FE')
   df$Model = factor(as.character(df$Fit), levels = var_order)
   plt = ggplot(df, aes(x = Z, color = Model)) + 
     stat_ecdf() +
     xlab(element_blank()) + ylab(element_blank()) + 
-    xlim(c(0,20)) + theme_minimal() +
-    theme(legend.position = c(0.8, 0.25))
+    xlim(c(0,20)) + theme_minimal() + theme(legend.title = element_blank())
   return(plt)
 }
 location_plot_w = function(location){
@@ -138,54 +165,64 @@ location_plot_w = function(location){
   r0 = data.frame(W = r0_postw[,location], Fit = 'Reg w/ FE')
   r1 = data.frame(W = r1_postw[,location], Fit = 'Reg w/o FE')
   ra = data.frame(W = W[,location], Fit = 'Empirical')
-  df = do.call(rbind, list(mc, vb, r1, r0, ra))
-  var_order = c('Empirical','Monte Carlo','Var Bayes','Reg w/ FE', 'Reg w/o FE')
+  df = do.call(rbind, list(ra, mc, vb, r1, r0))
+  var_order = c('Empirical','Monte Carlo','Var Bayes','Reg w/ FE','Reg w/o FE')
   df$Model = factor(as.character(df$Fit), levels = var_order)
   plt = ggplot(df, aes(x = W, color = Model)) +
     stat_ecdf() + 
     xlab(element_blank()) + ylab(element_blank()) + 
-    theme_minimal() + 
-    theme(legend.position = c(0.8, 0.25))
+    theme_minimal() + theme(legend.title =  element_blank())
   return(plt)
 }
 
-marginal_plot_dafb_z = location_plot_z(23L)
 marginal_plot_dafb_v = location_plot_v(23L)
 marginal_plot_dafb_w = location_plot_w(23L)
-marginal_plot_pia_z  = location_plot_z(53L)
 marginal_plot_pia_v  = location_plot_v(53L)
 marginal_plot_pia_w  = location_plot_w(53L)
+marginal_plot_pac_v  = location_plot_v(58L)
+marginal_plot_pac_w  = location_plot_w(58L)
 
-# ggsave('~/git/exapg/plots/delaware_marginal_z_dover_afb.pdf', marginal_plot_dafb_z)
-# ggsave('~/git/exapg/plots/delaware_marginal_v_dover_afb.pdf', marginal_plot_dafb_v)
-# ggsave('~/git/exapg/plots/delaware_marginal_z_phil_ia.pdf', marginal_plot_pia_z)
-# ggsave('~/git/exapg/plots/delaware_marginal_v_phil_ia.pdf', marginal_plot_pia_v)
+marginals = ggarrange(
+  marginal_plot_dafb_v, marginal_plot_pia_v, marginal_plot_pac_v,
+  marginal_plot_dafb_w, marginal_plot_pia_w, marginal_plot_pac_w, 
+  ncol = 3, nrow = 2, common.legend = TRUE,
+  legend = 'bottom'
+)
 
-# marginal_dafb = grid.arrange(marginal_plot_dafb_v, marginal_plot_dafb_z, ncol = 2)
-# marginal_pia  = grid.arrange(marginal_plot_pia_v, marginal_plot_pia_z, ncol = 2)
-# marginal_dafb = grid.arrange(marginal_plot_dafb_v, marginal_plot_dafb_w, ncol = 2)
-# marginal_pia  = grid.arrange(marginal_plot_pia_v, marginal_plot_pia_w, ncol = 2)
+marginals_annotated = annotate_figure(
+  p = marginals,
+  top = paste0(
+    '        Dover AFB   ',
+    '                                               ',
+    'Philadelphia Intl Airport',
+    '                                        ',
+    '   Packer Ave Terminal   '
+    ),
+  left = paste0(
+    '              W',
+    '                                                                    ',
+    'V'
+    )
+  )
+ggsave(
+  '~/git/exapg/plots/delaware_marginal_cdfs.png', 
+  plot = marginals_annotated, height = 8, width = 12, units = 'in'
+)
+ggsave(
+  '~/git/exapg/plots/delaware_marginal_cdfs.pdf', 
+  plot = marginals_annotated, height = 8, width = 12, units = 'in'
+  )
 
-# ggsave('~/git/exapg/plots/delaware_marginal_dover_afb.pdf', 
-#        marginal_dafb, width = 10.5, height = 4.5, units = 'in')
-# ggsave('~/git/exapg/plots/delaware_marginal_phil_ia.pdf', 
-#        marginal_pia, width = 10.5, height = 4.5, units = 'in')
-# ggsave('~/git/exapg/plots/delaware_marginal_dover_afb.png',
-#        marginal_dafb, width = 10.5, height = 4.5, units = 'in')
-# ggsave('~/git/exapg/plots/delaware_marginal_phil_ia.png',
-#        marginal_pia, width = 10.5, height = 4.5, units = 'in')
-
-make_marginal_plots = function(n){
-  pv = location_plot_v(n)
-  pw = location_plot_w(n)
-  pp = grid.arrange(pv,pw, ncol = 2, top = paste(i, locdata$FULLNAME[i]))
-  ggsave(sprintf('~/scratch/res/delaware_%02d.png', i), pp, width = 8, height = 3.5, units = 'in')
-}
-for(i in 1:ncol(W)){
-  make_marginal_plots(i)
-}
-
-rm(list = ls())
+# make_marginal_plots = function(n){
+#   pv = location_plot_v(n)
+#   pw = location_plot_w(n)
+#   pp = grid.arrange(pv,pw, ncol = 2, top = paste(i, locdata$FULLNAME[i]))
+#   ggsave(sprintf('~/scratch/res/delaware_%02d.png', i), pp, width = 8, height = 3.5, units = 'in')
+# }
+# for(i in 1:ncol(W)){
+#   make_marginal_plots(i)
+# }
+# rm(list = ls())
 # 
 # mc_delta = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/mc_delta.csv.gz'))
 # vb_delta = read.csv(gzfile('~/git/projgamma/datasets/slosh/del/vb_delta.csv.gz'))
